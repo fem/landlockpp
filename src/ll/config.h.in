@@ -1,0 +1,1 @@
+#define LLPP_BUILD_LANDLOCK_ABI @landlock_version@

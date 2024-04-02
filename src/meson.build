@@ -1,5 +1,9 @@
 src_include = include_directories('.')
 
+# config.h generation is in subdir to make sure the build-time directory structure
+# matches the installed directory structure
+subdir('ll')
+
 liblandlockpp = library(
 	'landlockpp',
 	[
