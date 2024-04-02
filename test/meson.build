@@ -2,6 +2,7 @@ catch_dep = dependency('catch2-with-main', required: true)
 
 tests = files([
 	'LandlockTest.cpp',
+	'ActionTypeTest.cpp',
 ])
 
 test_runner = executable(
@@ -15,6 +16,9 @@ test_runner = executable(
 	],
 	link_with: [
 		liblandlockpp,
+	],
+	dependencies: [
+		catch_dep
 	],
 )
 
