@@ -1,7 +1,6 @@
 catch_dep = dependency('catch2-with-main', required: true)
 
 tests = files([
-	'LandlockTest.cpp',
 	'ActionTypeTest.cpp',
 ])
 
