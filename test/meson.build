@@ -2,6 +2,7 @@ catch_dep = dependency('catch2-with-main', required: true)
 
 tests = files([
 	'ActionTypeTest.cpp',
+	'RuleTest.cpp',
 ])
 
 test_runner = executable(
