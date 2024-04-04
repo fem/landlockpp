@@ -9,6 +9,7 @@ liblandlockpp = library(
 	[
 		'ActionType.cpp',
 		'Rule.cpp',
+		'Ruleset.cpp',
 	],
 	include_directories: [
 		src_include,
