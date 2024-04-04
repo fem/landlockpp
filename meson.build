@@ -24,38 +24,7 @@ foreach h : required_headers
 	endif
 endforeach
 
-landlock_ver_code = '''
-#include <iostream>
-#include <cstring>
-extern "C" {
-#include <linux/landlock.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-}
-
-int main()
-{
-	const int res = (int) syscall(SYS_landlock_create_ruleset, nullptr, 0, LANDLOCK_CREATE_RULESET_VERSION);
-	if (res < 0) {
-		std::clog << strerror(errno);
-		return 1;
-	}
-
-	std::cout << res;
-	return 0;
-}
-'''
-landlock_ver_res = cxx.run(landlock_ver_code, name: 'Check Landlock ABI version')
-
-if not landlock_ver_res.compiled()
-	error('Failed to get landlock ABI version')
-endif
-
-if landlock_ver_res.returncode() != 0
-	error('Failed to get landlock ABI version: ', landlock_ver_res.stderr())
-else
-	message('Landlock ABI version: ', landlock_ver_res.stdout())
-endif
+subdir('meson')
 
 conf_data = configuration_data({
 	'landlock_version': landlock_ver_res.stdout(),
