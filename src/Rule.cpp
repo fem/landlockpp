@@ -61,6 +61,10 @@ NetPortRule::AttrVec NetPortRule::generate([[maybe_unused]] int max_abi
 #if LLPP_BUILD_LANDLOCK_ABI >= 4
 	const ActionType type = fold_actions(max_abi);
 
+	if (type.type_code() == 0) {
+		return {};
+	}
+
 	AttrVec res;
 	res.reserve(ports_.size());
 	for (const std::uint16_t port : ports_) {
