@@ -88,9 +88,12 @@ TEST_CASE("Rule::NetPortRule")
 		}
 	}
 
+// Otherwise, rules with invalid actions are generated
+#if LLPP_BUILD_LANDLOCK_API >= 4
 	SECTION("invalid ABI")
 	{
 		const NetPortRule::AttrVec rules = rule.generate(0);
 		CHECK(rules.empty());
 	}
+#endif
 }
