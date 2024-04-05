@@ -77,7 +77,7 @@ TEST_CASE("Rule::NetPortRule")
 		rules = rule.generate(abi);
 
 		if (abi > 0) {
-#if LLPP_BUILD_LANDLOCK_ABI >= 4
+#if LLPP_BUILD_LANDLOCK_API >= 4
 			REQUIRE(rules.size() == 3);
 			CHECK(rules.at(0).allowed_access ==
 			      expected_action.type_code());

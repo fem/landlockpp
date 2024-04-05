@@ -58,7 +58,7 @@ NetPortRule& NetPortRule::add_port(std::uint16_t port)
 NetPortRule::AttrVec NetPortRule::generate([[maybe_unused]] int max_abi
 ) const noexcept
 {
-#if LLPP_BUILD_LANDLOCK_ABI >= 4
+#if LLPP_BUILD_LANDLOCK_API >= 4
 	const ActionType type = fold_actions(max_abi);
 
 	if (type.type_code() == 0) {

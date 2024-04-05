@@ -109,7 +109,7 @@ private:
 class NetPortRule :
 	public Rule<
 		NetPortRule,
-#if LLPP_BUILD_LANDLOCK_ABI >= 4
+#if LLPP_BUILD_LANDLOCK_API >= 4
 		landlock_net_port_attr
 #else
 		std::nullptr_t

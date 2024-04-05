@@ -24,7 +24,7 @@ struct RuleType<landlock_path_beneath_attr> {
 		LANDLOCK_RULE_PATH_BENEATH;
 };
 
-#if LLPP_BUILD_LANDLOCK_ABI >= 4
+#if LLPP_BUILD_LANDLOCK_API >= 4
 template <>
 struct RuleType<landlock_net_port_attr> {
 	constexpr static landlock_rule_type TYPE_CODE = LANDLOCK_RULE_NET_PORT;

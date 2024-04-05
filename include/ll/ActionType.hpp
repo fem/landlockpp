@@ -144,7 +144,7 @@ namespace action
  */
 constexpr static ActionType INVALID_ACTION{0, std::numeric_limits<int>::min()};
 
-#if LLPP_BUILD_LANDLOCK_ABI >= 1
+#if LLPP_BUILD_LANDLOCK_API >= 1
 constexpr static ActionType FS_EXECUTE{LANDLOCK_ACCESS_FS_EXECUTE, 1};
 constexpr static ActionType FS_WRITE_FILE{LANDLOCK_ACCESS_FS_WRITE_FILE, 1};
 constexpr static ActionType FS_READ_FILE{LANDLOCK_ACCESS_FS_READ_FILE, 1};
@@ -174,19 +174,19 @@ constexpr static ActionType FS_MAKE_BLOCK = INVALID_ACTION;
 constexpr static ActionType FS_MAKE_SYM = INVALID_ACTION;
 #endif
 
-#if LLPP_BUILD_LANDLOCK_ABI >= 2
+#if LLPP_BUILD_LANDLOCK_API >= 2
 constexpr static ActionType FS_REFER{LANDLOCK_ACCESS_FS_REFER, 2};
 #else
 constexpr static ActionType FS_REFER = INVALID_ACTION;
 #endif
 
-#if LLPP_BUILD_LANDLOCK_ABI >= 3
+#if LLPP_BUILD_LANDLOCK_API >= 3
 constexpr static ActionType FS_TRUNCATE{LANDLOCK_ACCESS_FS_TRUNCATE, 3};
 #else
 constexpr static ActionType FS_TRUNCATE = INVALID_ACTION;
 #endif
 
-#if LLPP_BUILD_LANDLOCK_ABI >= 4
+#if LLPP_BUILD_LANDLOCK_API >= 4
 constexpr static ActionType NET_BIND_TCP{LANDLOCK_ACCESS_NET_BIND_TCP, 4};
 constexpr static ActionType NET_CONNECT_TCP{LANDLOCK_ACCESS_NET_CONNECT_TCP, 4};
 #else
