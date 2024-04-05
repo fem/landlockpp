@@ -64,35 +64,21 @@ TEST_CASE("Rule::NetPortRule")
 	NetPortRule rule;
 
 	// NOLINTNEXTLINE(*-magic-numbers)
-	rule.add_port(42).add_port(666).add_port(1337);
+	rule.add_port(42).add_port(666).add_port(1337).add_action(
+		action::NET_BIND_TCP
+	);
 
 	SECTION("valid ABI")
 	{
-		ActionType expected_action = action::INVALID_ACTION;
-		int abi = 0;
+		ActionType expected_action = action::NET_BIND_TCP;
+		int abi = 4;
 		NetPortRule::AttrVec rules;
-
-		SECTION("ABI 1")
-		{
-			expected_action = action::FS_EXECUTE |
-					  action::FS_MAKE_DIR |
-					  action::FS_MAKE_SOCK;
-			abi = 1;
-		}
-
-		SECTION("ABI 2")
-		{
-			expected_action =
-				action::FS_EXECUTE | action::FS_MAKE_DIR |
-				action::FS_MAKE_SOCK | action::FS_REFER;
-			abi = 2;
-		}
 
 		rules = rule.generate(abi);
 
 		if (abi > 0) {
 #if LLPP_BUILD_LANDLOCK_ABI >= 4
-			REQUIRE(rules.size() == 1);
+			REQUIRE(rules.size() == 3);
 			CHECK(rules.at(0).allowed_access ==
 			      expected_action.type_code());
 			CHECK(rules.at(0).port > 0);
