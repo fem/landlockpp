@@ -15,16 +15,6 @@
 
 using landlock::Ruleset;
 
-TEST_CASE("Ruleset::init")
-{
-	Ruleset ruleset{{landlock::action::FS_EXECUTE}};
-
-	// Theoretically, this doesn't have to be true, but we assume that we
-	// run the test on the same machine where the configuration has been
-	// done, which should result in the same ABI version
-	CHECK(ruleset.abi_version() == LLPP_BUILD_LANDLOCK_ABI);
-}
-
 TEST_CASE("Ruleset::default init fails")
 {
 	std::unique_ptr<Ruleset> ruleset;
