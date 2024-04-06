@@ -1,0 +1,5 @@
+include:
+  - project: "admindb/ci-templates"
+    file: "base.yml"
+  - project: "admindb/ci-templates"
+    file: "release-changelog.yml"
