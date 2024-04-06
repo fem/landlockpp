@@ -15,4 +15,15 @@ liblandlockpp = library(
 		src_include,
 		public_include,
 	],
+        install: true,
+	version: meson.project_version(),
+)
+
+pkg_config = import('pkgconfig')
+pkg_config.generate(
+	liblandlockpp,
+	libraries: [
+		liblandlockpp,
+	],
+	subdirs: ['.'],
 )

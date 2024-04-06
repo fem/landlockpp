@@ -3,7 +3,7 @@ project(
 	[
 		'cpp'
 	],
-	version: '0.1_alpha1',
+	version: '0.1.0',
 	default_options: [
 		'warning_level=3',
 		'cpp_std=c++17'
@@ -31,6 +31,7 @@ conf_data = configuration_data({
 })
 
 public_include = include_directories('./include')
+install_subdir('include/ll', install_dir: 'include')
 
 subdir('src')
 
