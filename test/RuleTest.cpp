@@ -71,7 +71,8 @@ TEST_CASE("Rule::NetPortRule")
 
 	SECTION("valid ABI")
 	{
-		ActionType expected_action = action::NET_BIND_TCP;
+		[[maybe_unused]] ActionType expected_action =
+			action::NET_BIND_TCP;
 		int abi = 4;
 		NetPortRule::AttrVec rules;
 

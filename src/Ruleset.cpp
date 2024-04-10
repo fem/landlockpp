@@ -1,5 +1,6 @@
 #include "ll/Ruleset.hpp"
 #include "ll/ActionType.hpp"
+#include "ll/config.h"
 
 #include <cerrno>
 #include <stdexcept>
@@ -36,9 +37,14 @@ Ruleset::Ruleset(
 
 	abi_version_ = res;
 
-	const landlock_ruleset_attr attr{
-		ActionType::join(abi_version_, handled_access_fs).type_code(),
-		ActionType::join(abi_version_, handled_access_net).type_code()
+	const landlock_ruleset_attr attr
+	{
+		ActionType::join(abi_version_, handled_access_fs).type_code()
+#if LLPP_BUILD_LANDLOCK_API >= 4
+			,
+			ActionType::join(abi_version_, handled_access_net)
+				.type_code()
+#endif
 	};
 
 	res = landlock_create_ruleset(&attr, sizeof(attr), 0);
