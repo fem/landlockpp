@@ -4,6 +4,7 @@
 #include "ll/config.h"
 
 #include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
