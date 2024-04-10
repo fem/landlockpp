@@ -2,7 +2,8 @@
 #include "ll/ActionType.hpp"
 #include "ll/config.h"
 
-#include <catch2/catch_test_macros.hpp>
+#include "test.hpp"
+
 #include <limits>
 
 using landlock::ActionType;

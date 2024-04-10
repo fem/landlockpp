@@ -1,4 +1,5 @@
 test_deps = []
+test_conf_data = {}
 
 catch_with_main_dep = dependency('catch2-with-main', required: false)
 if catch_with_main_dep.found()
@@ -31,6 +32,31 @@ else
 		error('Unable to find Catch2 main function')
 	endif
 endif
+
+catch_has_split_hdr = cxx.has_header(
+	'catch2/catch_test_macros.hpp',
+	required: false
+)
+if catch_has_split_hdr
+	test_conf_data += {
+		'HAVE_CATCH_SPLIT_HEADER': true,
+	}
+else
+	cxx.has_header(
+		'catch2/catch.hpp',
+		required: true
+	)
+	test_conf_data += {
+		'HAVE_CATCH_SPLIT_HEADER': false
+	}
+endif
+
+test_header = configure_file(
+	input: 'test.hpp.in',
+	output: 'test.hpp',
+	configuration: test_conf_data,
+	install: false,
+)
 
 tests = files([
 	'ActionTypeTest.cpp',
