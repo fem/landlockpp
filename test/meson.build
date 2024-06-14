@@ -87,3 +87,5 @@ test_tgt = run_target(
 		'"${MESON_BUILD_ROOT}/test/tests"',
 	],
 )
+
+test('tests', test_runner)
