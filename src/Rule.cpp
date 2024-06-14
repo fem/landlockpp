@@ -24,6 +24,10 @@ PathBeneathRule::AttrVec PathBeneathRule::generate(int max_abi) const noexcept
 
 	const ActionType type = fold_actions(max_abi);
 
+	if (type.type_code() == 0) {
+		return {};
+	}
+
 	AttrVec res;
 	res.reserve(path_fds_.size());
 	for (const int path_fd : path_fds_) {

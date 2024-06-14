@@ -18,8 +18,8 @@ namespace landlock
 {
 Ruleset::Ruleset(
 	// NOLINTNEXTLINE(*-easily-swappable-parameters)
-	const std::vector<ActionType>& handled_access_fs,
-	const std::vector<ActionType>& handled_access_net
+	const ActionVec& handled_access_fs,
+	const ActionVec& handled_access_net
 )
 {
 	if (handled_access_fs.empty() && handled_access_net.empty()) {
@@ -28,29 +28,11 @@ Ruleset::Ruleset(
 		};
 	}
 
-	int res;
+	if (not read_abi_version()) {
+		return;
+	}
 
-	res = landlock_create_ruleset(
-		nullptr, 0, LANDLOCK_CREATE_RULESET_VERSION
-	);
-	assert_res(res);
-
-	abi_version_ = res;
-
-	const landlock_ruleset_attr attr
-	{
-		ActionType::join(abi_version_, handled_access_fs).type_code()
-#if LLPP_BUILD_LANDLOCK_API >= 4
-			,
-			ActionType::join(abi_version_, handled_access_net)
-				.type_code()
-#endif
-	};
-
-	res = landlock_create_ruleset(&attr, sizeof(attr), 0);
-	assert_res(res);
-
-	ruleset_fd_ = res;
+	init_ruleset(handled_access_fs, handled_access_net);
 }
 
 Ruleset::~Ruleset()
@@ -64,12 +46,51 @@ void Ruleset::enforce(bool set_no_new_privs) const
 {
 	if (set_no_new_privs) {
 		const int res =
-			::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); // NOLINT(*-vararg)
+			::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0
+			); // NOLINT(*-vararg)
 		assert_res(res);
 	}
 
-	const int res = landlock_restrict_self(ruleset_fd_);
+	if (landlock_enabled()) {
+		const int res = landlock_restrict_self(ruleset_fd_);
+		assert_res(res);
+	}
+}
+
+bool Ruleset::read_abi_version()
+{
+	const int res = landlock_create_ruleset(
+		nullptr, 0, LANDLOCK_CREATE_RULESET_VERSION
+	);
+	if (res == -1 and errno == ENOSYS) {
+		return false;
+	}
 	assert_res(res);
+
+	abi_version_ = res;
+	return true;
+}
+
+void Ruleset::init_ruleset(
+	// NOLINTNEXTLINE(*-easily-swappable-parameters)
+	const ActionVec& handled_access_fs,
+	[[maybe_unused]] const ActionVec& handled_access_net
+)
+{
+	const landlock_ruleset_attr attr
+	{
+		ActionType::join(abi_version_, handled_access_fs).type_code()
+#if LLPP_BUILD_LANDLOCK_API >= 4
+			,
+			ActionType::join(abi_version_, handled_access_net)
+				.type_code()
+#endif
+	};
+
+	const int res = landlock_create_ruleset(&attr, sizeof(attr), 0);
+	assert_res(res);
+
+	ruleset_fd_ = res;
 }
 
 // NOLINTBEGIN(*-vararg)

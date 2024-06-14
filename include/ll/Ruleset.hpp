@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <variant>
+#include <vector>
 
 extern "C" {
 #include <linux/landlock.h>
@@ -25,6 +26,7 @@ class ActionType;
 class Ruleset
 {
 public:
+	using ActionVec = std::vector<ActionType>;
 	using RuleVariant = std::variant<PathBeneathRule, NetPortRule>;
 
 	/**
@@ -39,14 +41,27 @@ public:
 	 * @throws std::system_error If the syscall fails
 	 */
 	explicit Ruleset(
-		const std::vector<ActionType>& handled_access_fs = {},
-		const std::vector<ActionType>& handled_access_net = {}
+		const ActionVec& handled_access_fs = {},
+		const ActionVec& handled_access_net = {}
 	);
 	Ruleset(const Ruleset&) = delete;
 	Ruleset& operator=(const Ruleset&) = delete;
 	Ruleset(Ruleset&&) = delete;
 	Ruleset& operator=(Ruleset&&) = delete;
 	~Ruleset();
+
+	/**
+	 * Return whether Landlock support is enabled on the system
+	 *
+	 * Since the library is designed to provide best-effort safety, failure
+	 * to set up Landlock due to lack of support doesn't cause an exception.
+	 * Instead, this function returns whether support is available so
+	 * informational output can be printed as needed.
+	 */
+	[[nodiscard]] constexpr bool landlock_enabled() const noexcept
+	{
+		return abi_version_ > 0;
+	}
 
 	/**
 	 * Get the probed Landlock ABI version
@@ -84,6 +99,21 @@ public:
 	void enforce(bool set_no_new_privs = true) const;
 
 private:
+	/**
+	 * Read and store the running ABI version from the Landlock API
+	 *
+	 * @return true, if Landlock is available; false, otherwise
+	 */
+	bool read_abi_version();
+
+	/**
+	 * Initialize the Landlock Ruleset
+	 */
+	void init_ruleset(
+		const std::vector<ActionType>& handled_access_fs,
+		const std::vector<ActionType>& handled_access_net
+	);
+
 	template <typename AttrT>
 	void add_rule_int(const AttrT& rule)
 	{

@@ -64,12 +64,15 @@ TEST_CASE("Ruleset::rules")
 		::close(allowed_fd);
 	}
 
-	const int disallowed_fd =
-		::open((disallowed_test_path / "env").c_str(), O_RDONLY);
-	REQUIRE(disallowed_fd < 0);
-	CHECK(errno == EACCES);
-	if (disallowed_fd > 0) {
-		::close(disallowed_fd);
+	if (ruleset.landlock_enabled()) {
+		const int disallowed_fd =
+			::open((disallowed_test_path / "env").c_str(),
+			       O_RDONLY);
+		REQUIRE(disallowed_fd < 0);
+		CHECK(errno == EACCES);
+		if (disallowed_fd > 0) {
+			::close(disallowed_fd);
+		}
 	}
 }
 // NOLINTEND(*-vararg)
