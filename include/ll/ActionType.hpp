@@ -193,6 +193,12 @@ constexpr static ActionType NET_CONNECT_TCP{LANDLOCK_ACCESS_NET_CONNECT_TCP, 4};
 constexpr static ActionType NET_BIND_TCP = INVALID_ACTION;
 constexpr static ActionType NET_CONNECT_TCP = INVALID_ACTION;
 #endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 5
+constexpr static ActionType FS_IOCTL_DEV{LANDLOCK_ACCESS_FS_IOCTL_DEV, 5};
+#else
+constexpr static ActionType FS_IOCTL_DEV = INVALID_ACTION;
+#endif
 } // namespace action
 
 template <typename... T>
