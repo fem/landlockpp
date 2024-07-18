@@ -34,7 +34,7 @@ public:
 	/**
 	 * Create a new ruleset for filtering the specified filesystem actions
 	 *
-	 * This constructs a new ruleset and creates a ruleset file decriptor
+	 * This constructs a new ruleset and creates a ruleset file descriptor
 	 * using the Linux landlock API.
 	 *
 	 * @param handled_access_fs Actions to filter with this ruleset. Any
