@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <variant>
@@ -11,6 +12,7 @@ extern "C" {
 
 #include <ll/Rule.hpp>
 #include <ll/RuleType.hpp>
+#include <ll/config.h>
 
 namespace landlock
 {
@@ -69,6 +71,20 @@ public:
 	[[nodiscard]] int abi_version() const noexcept
 	{
 		return abi_version_;
+	}
+
+	/**
+	 * Get the effective Landlock ABI version
+	 *
+	 * The effective ABI version is the minimum of the ABI version of the
+	 * running kernel and the API version of the headers the library was
+	 * compiled with. Thus, it represents the maximum ABI version for which
+	 * working Landlock rules are available and can be registered in the
+	 * kernel's Landlock module.
+	 */
+	[[nodiscard]] constexpr int effective_abi_version() const noexcept
+	{
+		return std::min(abi_version_, LLPP_BUILD_LANDLOCK_API);
 	}
 
 	/**
