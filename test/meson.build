@@ -62,6 +62,7 @@ tests = files([
 	'ActionTypeTest.cpp',
 	'RuleTest.cpp',
 	'RulesetTest.cpp',
+	'typingTest.cpp',
 ])
 
 test_runner = executable(
