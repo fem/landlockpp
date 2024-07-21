@@ -42,6 +42,15 @@ struct ValWrapper {
 };
 
 /**
+ * Unwrap the first template parameter from a template type
+ *
+ * This must be specialized for all supported types. Given a type T<U> as a
+ * parameter, the specialized struct must return U as its ::type.
+ */
+template <typename T>
+struct Unwrap;
+
+/**
  * Combine a value and a value wrapper
  *
  * This returns a value wrapper with the first value and the values of the
@@ -117,4 +126,26 @@ template <typename T, T v, T... us>
 struct Combine<T, v, ValWrapper<T, us...>> {
 	using type = ValWrapper<T, v, us...>;
 };
+
+/**
+ * Perform Union on a pack of value packs
+ */
+template <typename T, typename... Us>
+struct MultiUnion;
+
+template <typename T, typename U, typename... Us>
+struct MultiUnion<T, U, Us...> {
+	using type =
+		UnionT<T,
+		       typename Unwrap<U>::type,
+		       typename MultiUnion<T, Us...>::type>;
+};
+
+template <typename T, typename U>
+struct MultiUnion<T, U> {
+	using type = typename Unwrap<U>::type;
+};
+
+template <typename T, typename... Us>
+using MultiUnionT = typename MultiUnion<T, Us...>::type;
 } // namespace landlock::typing

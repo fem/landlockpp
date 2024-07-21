@@ -3,6 +3,7 @@
 #include "ll/config.h"
 
 #include <cerrno>
+#include <cstring>
 #include <stdexcept>
 #include <system_error>
 #include <unistd.h>
@@ -18,8 +19,8 @@ namespace landlock
 {
 Ruleset::Ruleset(
 	// NOLINTNEXTLINE(*-easily-swappable-parameters)
-	const ActionVec& handled_access_fs,
-	const ActionVec& handled_access_net
+	const ActionVec<ActionRuleType::PATH_BENEATH>& handled_access_fs,
+	const ActionVec<ActionRuleType::NET_PORT>& handled_access_net
 )
 {
 	if (handled_access_fs.empty() && handled_access_net.empty()) {
@@ -73,19 +74,20 @@ bool Ruleset::read_abi_version()
 
 void Ruleset::init_ruleset(
 	// NOLINTNEXTLINE(*-easily-swappable-parameters)
-	const ActionVec& handled_access_fs,
-	[[maybe_unused]] const ActionVec& handled_access_net
+	const ActionVec<ActionRuleType::PATH_BENEATH>& handled_access_fs,
+	[[maybe_unused]] const ActionVec<ActionRuleType::NET_PORT>&
+		handled_access_net
 )
 {
-	const landlock_ruleset_attr attr
-	{
-		ActionType::join(abi_version_, handled_access_fs).type_code()
+	landlock_ruleset_attr attr{};
+	std::memset(&attr, 0, sizeof(landlock_ruleset_attr));
+
+	attr.handled_access_fs =
+		join(abi_version_, handled_access_fs).type_code();
 #if LLPP_BUILD_LANDLOCK_API >= 4
-			,
-			ActionType::join(abi_version_, handled_access_net)
-				.type_code()
+	attr.handled_access_net =
+		join(abi_version_, handled_access_net).type_code();
 #endif
-	};
 
 	const int res = landlock_create_ruleset(&attr, sizeof(attr), 0);
 	assert_res(res);

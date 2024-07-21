@@ -25,9 +25,9 @@ TEST_CASE("Rule::PathBeneathRule")
 
 	SECTION("valid ABI")
 	{
-		ActionType expected_action_pb = action::INVALID_ACTION;
-		[[maybe_unused]] ActionType expected_action_np =
-			action::INVALID_ACTION;
+		action::FsAction expected_action_pb = action::INVALID_ACTION_FS;
+		[[maybe_unused]] action::NetAction expected_action_np =
+			action::INVALID_ACTION_NET;
 		int abi = 0;
 
 		SECTION("ABI 1")
@@ -105,7 +105,7 @@ TEST_CASE("Rule::NetPortRule")
 
 	SECTION("valid ABI")
 	{
-		[[maybe_unused]] ActionType expected_action =
+		[[maybe_unused]] action::NetAction expected_action =
 			action::NET_BIND_TCP;
 		int abi = 4;
 		NetPortRule::AttrVec rules;

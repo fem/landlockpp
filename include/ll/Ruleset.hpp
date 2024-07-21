@@ -10,14 +10,14 @@ extern "C" {
 #include <linux/landlock.h>
 }
 
+#include <ll/ActionType.hpp>
 #include <ll/Rule.hpp>
 #include <ll/RuleType.hpp>
 #include <ll/config.h>
+#include <ll/typing.hpp>
 
 namespace landlock
 {
-class ActionType;
-
 /**
  * Landlock ruleset abstraction
  *
@@ -28,7 +28,9 @@ class ActionType;
 class Ruleset
 {
 public:
-	using ActionVec = std::vector<ActionType>;
+	template <ActionRuleType supp>
+	using ActionVec = std::vector<
+		ActionType<typing::ValWrapper<ActionRuleType, supp>>>;
 	using RuleVariant = std::variant<PathBeneathRule, NetPortRule>;
 
 	/**
@@ -43,8 +45,10 @@ public:
 	 * @throws std::system_error If the syscall fails
 	 */
 	explicit Ruleset(
-		const ActionVec& handled_access_fs = {},
-		const ActionVec& handled_access_net = {}
+		const ActionVec<ActionRuleType::PATH_BENEATH>&
+			handled_access_fs = {},
+		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net =
+			{}
 	);
 	Ruleset(const Ruleset&) = delete;
 	Ruleset& operator=(const Ruleset&) = delete;
@@ -93,8 +97,12 @@ public:
 	 * The rule's generate() method is called to obtain all rules to add to
 	 * the ruleset.
 	 */
-	template <typename Self, typename AttrT, int min_abi>
-	Ruleset& add_rule(Rule<Self, AttrT, min_abi>&& rule)
+	template <
+		typename Self,
+		typename AttrT,
+		ActionRuleType supp,
+		int min_abi>
+	Ruleset& add_rule(Rule<Self, AttrT, supp, min_abi>&& rule)
 	{
 		for (const auto rule : rule.generate(abi_version_)) {
 			add_rule_int(rule);
@@ -126,8 +134,9 @@ private:
 	 * Initialize the Landlock Ruleset
 	 */
 	void init_ruleset(
-		const std::vector<ActionType>& handled_access_fs,
-		const std::vector<ActionType>& handled_access_net
+		const ActionVec<ActionRuleType::PATH_BENEATH>&
+			handled_access_fs,
+		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net
 	);
 
 	template <typename AttrT>

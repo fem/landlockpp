@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iomanip>
 #include <limits>
 #include <ostream>
+#include <type_traits>
 #include <vector>
 
 extern "C" {
@@ -11,9 +13,22 @@ extern "C" {
 }
 
 #include <ll/config.h>
+#include <ll/typing.hpp>
 
 namespace landlock
 {
+/**
+ * Compatible rules for action types
+ */
+enum class ActionRuleType : std::underlying_type_t<landlock_rule_type> {
+	PATH_BENEATH = LANDLOCK_RULE_PATH_BENEATH,
+#if LLPP_BUILD_LANDLOCK_API >= 4
+	NET_PORT = LANDLOCK_RULE_NET_PORT,
+#else
+	NET_PORT = 0,
+#endif
+};
+
 /**
  * Landlock action type
  *
@@ -21,6 +36,7 @@ namespace landlock
  * is associated with a type code and a minimum ABI version required to secure
  * this action using landlock.
  */
+template <typename SuppT>
 class ActionType
 {
 public:
@@ -51,27 +67,6 @@ public:
 		return *this;
 	}
 
-	/**
-	 * Filter actions by ABI and fold them with operator|
-	 *
-	 * This function combines an arbitrary number of actions, but filters
-	 * out any actions whose min_abi() is bigger than the supplied max_abi,
-	 * allowing to filter out unsupported actions for any given ABI version.
-	 *
-	 * @internal This function and its base case are defined at the end of
-	 * the file as they require action::INVALID_ACTION to be defined as
-	 * default.
-	 */
-	template <typename... T>
-	constexpr static ActionType
-	join(int max_abi, const ActionType& action1, const T&... actions);
-
-	static ActionType
-	join(int max_abi, const std::vector<ActionType>& actions);
-
-	/// Base case of join()
-	constexpr static ActionType join(int max_abi, const ActionType& action);
-
 	[[nodiscard]] constexpr std::uint64_t type_code() const noexcept
 	{
 		return type_code_;
@@ -85,33 +80,85 @@ private:
 	std::uint64_t type_code_;
 	int min_abi_;
 };
+
+namespace typing
+{
+template <typename T, T... supp>
+struct Unwrap<ActionType<ValWrapper<T, supp...>>> {
+	using type = ValWrapper<T, supp...>;
+};
+} // namespace typing
+
+template <typename RuleT, RuleT reduce_to, RuleT... supp>
+constexpr const ActionType<typing::ValWrapper<RuleT, reduce_to>>&
+reduce(const ActionType<typing::ValWrapper<RuleT, supp...>>& action)
+{
+	static_assert(
+		typing::is_element<RuleT, reduce_to, supp...>(),
+		"Trying to reduce to unsupported type"
+	);
+	// TODO can we get rid of reinterpret_cast?
+	return *reinterpret_cast<
+		const ActionType<typing::ValWrapper<RuleT, reduce_to>>*>(&action
+	);
+}
 } // namespace landlock
 
-constexpr landlock::ActionType operator|(
-	const landlock::ActionType& lhs, const landlock::ActionType& rhs
+template <typename RuleT, RuleT... supp_lhs, RuleT... supp_rhs>
+constexpr landlock::ActionType<landlock::typing::UnionT<
+	RuleT,
+	landlock::typing::ValWrapper<RuleT, supp_lhs...>,
+	landlock::typing::ValWrapper<RuleT, supp_rhs...>>>
+operator|(
+	const landlock::ActionType<
+		landlock::typing::ValWrapper<RuleT, supp_lhs...>>& lhs,
+	const landlock::ActionType<
+		landlock::typing::ValWrapper<RuleT, supp_rhs...>>& rhs
 ) noexcept
 {
 	return {lhs.type_code() | rhs.type_code(),
 		std::max(lhs.min_abi(), rhs.min_abi())};
 }
 
+template <typename T, typename U>
 constexpr bool operator==(
-	const landlock::ActionType& lhs, const landlock::ActionType& rhs
+	[[maybe_unused]] const landlock::ActionType<T>& lhs,
+	[[maybe_unused]] const landlock::ActionType<U>& rhs
+) noexcept
+{
+	// Actual equality is checked in template specializations
+	return false;
+}
+
+template <typename supported>
+constexpr bool operator==(
+	const landlock::ActionType<supported>& lhs,
+	const landlock::ActionType<supported>& rhs
 ) noexcept
 {
 	return lhs.type_code() == rhs.type_code() &&
 	       lhs.min_abi() == rhs.min_abi();
 }
 
+template <typename T, typename U>
 constexpr bool operator!=(
-	const landlock::ActionType& lhs, const landlock::ActionType& rhs
+	const landlock::ActionType<T>& lhs, const landlock::ActionType<U>& rhs
 ) noexcept
 {
 	return not(lhs == rhs);
 }
 
+template <typename supported>
 std::ostream&
-operator<<(std::ostream& out, const landlock::ActionType& atype) noexcept;
+operator<<(std::ostream& out, const landlock::ActionType<supported>& atype)
+{
+	const auto fmt = out.flags();
+	out << std::hex << std::setfill('0')
+	    << std::setw(sizeof(std::uint64_t) * 2) << atype.type_code() << '/'
+	    << std::dec << atype.min_abi();
+	out.flags(fmt);
+	return out;
+}
 
 namespace landlock
 {
@@ -125,6 +172,16 @@ namespace landlock
  */
 namespace action
 {
+using FsAction = ActionType<
+	typing::ValWrapper<ActionRuleType, ActionRuleType::PATH_BENEATH>>;
+using NetAction = ActionType<
+	typing::ValWrapper<ActionRuleType, ActionRuleType::NET_PORT>>;
+
+using AllAction = ActionType<typing::ValWrapper<
+	ActionRuleType,
+	ActionRuleType::PATH_BENEATH,
+	ActionRuleType::NET_PORT>>;
+
 /**
  * Dummy invalid action
  *
@@ -142,82 +199,136 @@ namespace action
  * new_abi_version and use = INVALID_ACTION for the else branch for each of the
  * types as a fallback for older systems.
  */
-constexpr static ActionType INVALID_ACTION{0, std::numeric_limits<int>::min()};
+constexpr static AllAction INVALID_ACTION{0, std::numeric_limits<int>::min()};
+constexpr static FsAction INVALID_ACTION_FS{
+	INVALID_ACTION.type_code(), INVALID_ACTION.min_abi()
+};
+constexpr static NetAction INVALID_ACTION_NET{
+	INVALID_ACTION.type_code(), INVALID_ACTION.min_abi()
+};
 
 #if LLPP_BUILD_LANDLOCK_API >= 1
-constexpr static ActionType FS_EXECUTE{LANDLOCK_ACCESS_FS_EXECUTE, 1};
-constexpr static ActionType FS_WRITE_FILE{LANDLOCK_ACCESS_FS_WRITE_FILE, 1};
-constexpr static ActionType FS_READ_FILE{LANDLOCK_ACCESS_FS_READ_FILE, 1};
-constexpr static ActionType FS_READ_DIR{LANDLOCK_ACCESS_FS_READ_DIR, 1};
+constexpr static FsAction FS_EXECUTE{LANDLOCK_ACCESS_FS_EXECUTE, 1};
+constexpr static FsAction FS_WRITE_FILE{LANDLOCK_ACCESS_FS_WRITE_FILE, 1};
+constexpr static FsAction FS_READ_FILE{LANDLOCK_ACCESS_FS_READ_FILE, 1};
+constexpr static FsAction FS_READ_DIR{LANDLOCK_ACCESS_FS_READ_DIR, 1};
 
-constexpr static ActionType FS_REMOVE_DIR{LANDLOCK_ACCESS_FS_REMOVE_DIR, 1};
-constexpr static ActionType FS_REMOVE_FILE{LANDLOCK_ACCESS_FS_REMOVE_FILE, 1};
-constexpr static ActionType FS_MAKE_CHAR{LANDLOCK_ACCESS_FS_MAKE_CHAR, 1};
-constexpr static ActionType FS_MAKE_DIR{LANDLOCK_ACCESS_FS_MAKE_DIR, 1};
-constexpr static ActionType FS_MAKE_SOCK{LANDLOCK_ACCESS_FS_MAKE_SOCK, 1};
-constexpr static ActionType FS_MAKE_FIFO{LANDLOCK_ACCESS_FS_MAKE_FIFO, 1};
-constexpr static ActionType FS_MAKE_BLOCK{LANDLOCK_ACCESS_FS_MAKE_BLOCK, 1};
-constexpr static ActionType FS_MAKE_SYM{LANDLOCK_ACCESS_FS_MAKE_SYM, 1};
+constexpr static FsAction FS_REMOVE_DIR{LANDLOCK_ACCESS_FS_REMOVE_DIR, 1};
+constexpr static FsAction FS_REMOVE_FILE{LANDLOCK_ACCESS_FS_REMOVE_FILE, 1};
+constexpr static FsAction FS_MAKE_CHAR{LANDLOCK_ACCESS_FS_MAKE_CHAR, 1};
+constexpr static FsAction FS_MAKE_DIR{LANDLOCK_ACCESS_FS_MAKE_DIR, 1};
+constexpr static FsAction FS_MAKE_SOCK{LANDLOCK_ACCESS_FS_MAKE_SOCK, 1};
+constexpr static FsAction FS_MAKE_FIFO{LANDLOCK_ACCESS_FS_MAKE_FIFO, 1};
+constexpr static FsAction FS_MAKE_BLOCK{LANDLOCK_ACCESS_FS_MAKE_BLOCK, 1};
+constexpr static FsAction FS_MAKE_SYM{LANDLOCK_ACCESS_FS_MAKE_SYM, 1};
 #else
-constexpr static ActionType FS_EXECUTE = INVALID_ACTION;
-constexpr static ActionType FS_WRITE_FILE = INVALID_ACTION;
-constexpr static ActionType FS_READ_FILE = INVALID_ACTION;
-constexpr static ActionType FS_READ_DIR = INVALID_ACTION;
+constexpr static FsAction FS_EXECUTE = INVALID_ACTION_FS;
+constexpr static FsAction FS_WRITE_FILE = INVALID_ACTION_FS;
+constexpr static FsAction FS_READ_FILE = INVALID_ACTION_FS;
+constexpr static FsAction FS_READ_DIR = INVALID_ACTION_FS;
 
-constexpr static ActionType FS_REMOVE_DIR = INVALID_ACTION;
-constexpr static ActionType FS_REMOVE_FILE = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_CHAR = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_DIR = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_SOCK = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_FIFO = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_BLOCK = INVALID_ACTION;
-constexpr static ActionType FS_MAKE_SYM = INVALID_ACTION;
+constexpr static FsAction FS_REMOVE_DIR = INVALID_ACTION_FS;
+constexpr static FsAction FS_REMOVE_FILE = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_CHAR = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_DIR = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_SOCK = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_FIFO = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_BLOCK = INVALID_ACTION_FS;
+constexpr static FsAction FS_MAKE_SYM = INVALID_ACTION_FS;
 #endif
 
 #if LLPP_BUILD_LANDLOCK_API >= 2
-constexpr static ActionType FS_REFER{LANDLOCK_ACCESS_FS_REFER, 2};
+constexpr static FsAction FS_REFER{LANDLOCK_ACCESS_FS_REFER, 2};
 #else
-constexpr static ActionType FS_REFER = INVALID_ACTION;
+constexpr static FsAction FS_REFER = INVALID_ACTION_FS;
 #endif
 
 #if LLPP_BUILD_LANDLOCK_API >= 3
-constexpr static ActionType FS_TRUNCATE{LANDLOCK_ACCESS_FS_TRUNCATE, 3};
+constexpr static FsAction FS_TRUNCATE{LANDLOCK_ACCESS_FS_TRUNCATE, 3};
 #else
-constexpr static ActionType FS_TRUNCATE = INVALID_ACTION;
+constexpr static FsAction FS_TRUNCATE = INVALID_ACTION_FS;
 #endif
 
 #if LLPP_BUILD_LANDLOCK_API >= 4
-constexpr static ActionType NET_BIND_TCP{LANDLOCK_ACCESS_NET_BIND_TCP, 4};
-constexpr static ActionType NET_CONNECT_TCP{LANDLOCK_ACCESS_NET_CONNECT_TCP, 4};
+constexpr static NetAction NET_BIND_TCP{LANDLOCK_ACCESS_NET_BIND_TCP, 4};
+constexpr static NetAction NET_CONNECT_TCP{LANDLOCK_ACCESS_NET_CONNECT_TCP, 4};
 #else
-constexpr static ActionType NET_BIND_TCP = INVALID_ACTION;
-constexpr static ActionType NET_CONNECT_TCP = INVALID_ACTION;
+constexpr static NetAction NET_BIND_TCP = INVALID_ACTION_NET;
+constexpr static NetAction NET_CONNECT_TCP = INVALID_ACTION_NET;
 #endif
 
 #if LLPP_BUILD_LANDLOCK_API >= 5
-constexpr static ActionType FS_IOCTL_DEV{LANDLOCK_ACCESS_FS_IOCTL_DEV, 5};
+constexpr static FsAction FS_IOCTL_DEV{LANDLOCK_ACCESS_FS_IOCTL_DEV, 5};
 #else
-constexpr static ActionType FS_IOCTL_DEV = INVALID_ACTION;
+constexpr static FsAction FS_IOCTL_DEV = INVALID_ACTION_FS;
 #endif
 } // namespace action
 
-template <typename... T>
-constexpr ActionType
-ActionType::join(int max_abi, const ActionType& action, const T&... actions)
+/**
+ * Filter actions by ABI and fold them with operator|
+ *
+ * This function combines an arbitrary number of actions, but filters
+ * out any actions whose min_abi() is bigger than the supplied max_abi,
+ * allowing to filter out unsupported actions for any given ABI version.
+ *
+ * The resulting action type supports the union of rule types of all supplied
+ * actions.
+ */
+template <typename RuleT, RuleT... supp_lhs, typename... ActionT>
+constexpr ActionType<typing::MultiUnionT<
+	RuleT,
+	ActionType<typing::ValWrapper<RuleT, supp_lhs...>>,
+	ActionT...>>
+join(int max_abi,
+     const ActionType<typing::ValWrapper<RuleT, supp_lhs...>>& action,
+     const ActionT&... actions)
 {
-	if (action.min_abi_ > max_abi) {
+	if (action.min_abi() > max_abi) {
 		return join(max_abi, actions...);
 	}
 
 	return action | join(max_abi, actions...);
 }
 
-constexpr ActionType ActionType::join(int max_abi, const ActionType& action)
+template <typename RuleT, RuleT... supp_lhs, RuleT... supp_rhs>
+constexpr ActionType<typing::UnionT<
+	RuleT,
+	typing::ValWrapper<RuleT, supp_lhs...>,
+	typing::ValWrapper<RuleT, supp_rhs...>>>
+join(int max_abi,
+     const ActionType<typing::ValWrapper<RuleT, supp_lhs...>>& lhs,
+     const ActionType<typing::ValWrapper<RuleT, supp_rhs...>>& rhs)
 {
-	if (action.min_abi_ > max_abi) {
-		return action::INVALID_ACTION;
+	if (lhs.min_abi() > max_abi && rhs.min_abi() > max_abi) {
+		return {action::INVALID_ACTION.type_code(),
+			action::INVALID_ACTION.min_abi()};
 	}
 
-	return action;
+	if (lhs.min_abi() > max_abi) {
+		return rhs;
+	}
+
+	if (rhs.min_abi() > max_abi) {
+		return lhs;
+	}
+
+	return lhs | rhs;
+}
+
+template <typename RuleT, RuleT supp>
+ActionType<typing::ValWrapper<RuleT, supp>>
+join(int max_abi,
+     const std::vector<ActionType<typing::ValWrapper<RuleT, supp>>>& actions)
+{
+	using AT = ActionType<typing::ValWrapper<RuleT, supp>>;
+	AT atype = reduce<RuleT, supp>(action::INVALID_ACTION);
+
+	for (const AT& act : actions) {
+		if (act.min_abi() <= max_abi) {
+			atype |= act;
+		}
+	}
+
+	return atype;
 }
 } // namespace landlock

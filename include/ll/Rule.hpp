@@ -2,10 +2,12 @@
 
 #include <filesystem>
 #include <linux/landlock.h>
+#include <type_traits>
 #include <vector>
 
 #include <ll/ActionType.hpp>
 #include <ll/config.h>
+#include <ll/typing.hpp>
 
 namespace landlock
 {
@@ -21,18 +23,23 @@ namespace landlock
  *
  * @param AttrT Return type of the generated attribute structs
  *
+ * @param supported Action rule type of supported actions
+ *
  * @param min_abi minimum ABI version required for this rule to work
  */
-template <typename Self, typename AttrT, int min_abi>
+template <typename Self, typename AttrT, ActionRuleType supported, int min_abi>
 class Rule
 {
 public:
 	/// Resulting attribute type for the landlock API
 	using Attr = AttrT;
 	using AttrVec = std::vector<Attr>;
-	using Base = Rule<Self, AttrT, min_abi>;
+	using ReducedActionType =
+		ActionType<typing::ValWrapper<ActionRuleType, supported>>;
+	using Base = Rule<Self, AttrT, supported, min_abi>;
 
 	constexpr static int MIN_ABI = min_abi;
+	constexpr static ActionRuleType SUPPORTED_ACTION_TYPE = supported;
 
 	Rule() = default;
 	Rule(const Rule&) = delete;
@@ -53,9 +60,19 @@ public:
 	/**
 	 * Add an action to this rule
 	 */
-	Self& add_action(ActionType type)
+	template <typename RuleT, RuleT... action_supp>
+	Self&
+	add_action(ActionType<typing::ValWrapper<RuleT, action_supp...>> type)
 	{
-		actions_.push_back(type);
+		static_assert(
+			typing::is_element<
+				RuleT,
+				SUPPORTED_ACTION_TYPE,
+				action_supp...>(),
+			"Trying to add unsupported action for rule"
+		);
+
+		actions_.push_back(reduce<RuleT, SUPPORTED_ACTION_TYPE>(type));
 		return *static_cast<Self*>(this);
 	}
 
@@ -67,13 +84,13 @@ protected:
 	 * action types with minimum ABI version below the maximum supported
 	 * version and combines them into a single action type.
 	 */
-	[[nodiscard]] ActionType fold_actions(int max_abi) const noexcept
+	[[nodiscard]] ReducedActionType fold_actions(int max_abi) const noexcept
 	{
-		return ActionType::join(max_abi, actions_);
+		return join(max_abi, actions_);
 	}
 
 private:
-	std::vector<ActionType> actions_;
+	std::vector<ReducedActionType> actions_;
 };
 
 /**
@@ -82,7 +99,11 @@ private:
  * This rule controls access to files and directories beneath a path.
  */
 class PathBeneathRule :
-	public Rule<PathBeneathRule, landlock_path_beneath_attr, 1>
+	public Rule<
+		PathBeneathRule,
+		landlock_path_beneath_attr,
+		ActionRuleType::PATH_BENEATH,
+		1>
 {
 public:
 	PathBeneathRule() = default;
@@ -115,6 +136,7 @@ class NetPortRule :
 		std::nullptr_t
 #endif
 		,
+		ActionRuleType::NET_PORT,
 		4>
 {
 public:
