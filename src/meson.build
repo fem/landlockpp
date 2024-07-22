@@ -7,7 +7,6 @@ subdir('ll')
 liblandlockpp = library(
 	'landlockpp',
 	[
-		'ActionType.cpp',
 		'Rule.cpp',
 		'Ruleset.cpp',
 	],
