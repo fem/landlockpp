@@ -1,9 +1,10 @@
 test_deps = []
 test_conf_data = {}
+add_test_main = false
 
-catch_with_main_dep = dependency('catch2-with-main', required: false)
-if catch_with_main_dep.found()
-	test_deps += catch_with_main_dep
+catch_dep = dependency('catch2-with-main', required: false)
+if catch_dep.found()
+	test_deps += catch_dep
 else
 	catch_dep = dependency('catch2', required: true)
 	test_deps += catch_dep
@@ -29,7 +30,8 @@ else
 	endforeach
 
 	if not lib_dep_found
-		error('Unable to find Catch2 main function')
+		message('No Catch-provided main() found. Trying to add test_main.cpp source to provide main()')
+		add_test_main = true
 	endif
 endif
 
@@ -64,6 +66,12 @@ tests = files([
 	'RulesetTest.cpp',
 	'typingTest.cpp',
 ])
+
+if add_test_main
+	tests += files([
+		'test_main.cpp'
+	])
+endif
 
 test_runner = executable(
 	'tests',
