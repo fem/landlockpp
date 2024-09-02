@@ -61,6 +61,7 @@ TEST_CASE("Rule::PathBeneathRule")
 				action::FS_EXECUTE | action::FS_MAKE_DIR |
 				action::FS_MAKE_SOCK | action::FS_REFER |
 				action::FS_TRUNCATE;
+			expected_action_np = action::NET_BIND_TCP;
 			abi = 4;
 		}
 
