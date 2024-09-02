@@ -18,7 +18,8 @@ TEST_CASE("Rule::PathBeneathRule")
 		.add_action(action::FS_MAKE_DIR)
 		.add_action(action::FS_MAKE_SOCK)
 		.add_action(action::FS_REFER)
-		.add_action(action::FS_TRUNCATE);
+		.add_action(action::FS_TRUNCATE)
+		.add_action(action::FS_IOCTL_DEV);
 	pb_rule.add_path("/bin/sh");
 	np_rule.add_action(action::NET_BIND_TCP);
 	np_rule.add_port(42); // NOLINT(*-magic-numbers)
@@ -63,6 +64,16 @@ TEST_CASE("Rule::PathBeneathRule")
 				action::FS_TRUNCATE;
 			expected_action_np = action::NET_BIND_TCP;
 			abi = 4;
+		}
+
+		SECTION("ABI 5")
+		{
+			expected_action_pb =
+				action::FS_EXECUTE | action::FS_MAKE_DIR |
+				action::FS_MAKE_SOCK | action::FS_REFER |
+				action::FS_TRUNCATE | action::FS_IOCTL_DEV;
+			expected_action_np = action::NET_BIND_TCP;
+			abi = 5; // NOLINT(*-magic-numbers)
 		}
 
 		const PathBeneathRule::AttrVec pb_rules = pb_rule.generate(abi);
