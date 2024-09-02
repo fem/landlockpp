@@ -3,6 +3,8 @@
  */
 #pragma once
 
+#include <type_traits>
+
 #if __cplusplus < 202002L
 # define LLPP_CONSTEVAL constexpr
 #else
@@ -11,28 +13,6 @@
 
 namespace landlock::typing
 {
-/**
- * Return differing types depending on bool condition
- *
- * If Cond evaluates to true, TrueT is returned as ::type. Otherwise, FalseT is
- * returned.
- */
-template <bool Cond, typename TrueT, typename FalseT>
-struct IfElse;
-
-template <typename TrueT, typename FalseT>
-struct IfElse<true, TrueT, FalseT> {
-	using type = TrueT;
-};
-
-template <typename TrueT, typename FalseT>
-struct IfElse<false, TrueT, FalseT> {
-	using type = FalseT;
-};
-
-template <bool Cond, typename TrueT, typename FalseT>
-using IfElseT = typename IfElse<Cond, TrueT, FalseT>::type;
-
 /**
  * Wrapper for value pack as a single template parameter
  */
@@ -109,7 +89,7 @@ struct Union<T, ValWrapper<T, lv1, lvs...>, ValWrapper<T, rvs...>> {
 	using type_false =
 		UnionT<T, ValWrapper<T, lvs...>, ValWrapper<T, rvs...>>;
 
-	using type = IfElseT<ADD_LV1, type_true, type_false>;
+	using type = std::conditional_t<ADD_LV1, type_true, type_false>;
 };
 
 template <typename T, T lv1, T... rvs>
@@ -119,7 +99,7 @@ struct Union<T, ValWrapper<T, lv1>, ValWrapper<T, rvs...>> {
 	using type_true = ValWrapper<T, lv1>;
 	using type_false = ValWrapper<T>;
 
-	using type = IfElseT<ADD_LV1, type_true, type_false>;
+	using type = std::conditional_t<ADD_LV1, type_true, type_false>;
 };
 
 template <typename T, T v, T... us>
