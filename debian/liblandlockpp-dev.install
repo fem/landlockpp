@@ -1,0 +1,3 @@
+/usr/include/*
+/usr/lib/${DEB_BUILD_GNU_TYPE}/liblandlockpp.so
+/usr/lib/${DEB_BUILD_GNU_TYPE}/pkgconfig/*.pc

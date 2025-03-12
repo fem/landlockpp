@@ -1,0 +1,16 @@
+Source: liblandlockpp
+Maintainer: Adrian Schollmeyer <adrian.schollmeyer@fem.tu-ilmenau.de>
+Section: devel
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper, meson, pkgconf, catch2, linux-libc-dev
+
+Package: liblandlockpp0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Library for best-effort Landlock support in C++
+
+Package: liblandlockpp-dev
+Architecture: any
+Depends: liblandlockpp0 (>= ${binary:Version}), linux-libc-dev, ${misc:Depends}
+Description: Development files for liblandlockpp
