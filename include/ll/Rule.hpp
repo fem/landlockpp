@@ -7,6 +7,7 @@
 
 #include <ll/ActionType.hpp>
 #include <ll/config.h>
+#include <ll/coredefs.hpp>
 #include <ll/typing.hpp>
 
 namespace landlock
@@ -96,7 +97,7 @@ private:
  *
  * This rule controls access to files and directories beneath a path.
  */
-class PathBeneathRule :
+class LLPP_EXPORT PathBeneathRule :
 	public Rule<
 		PathBeneathRule,
 		landlock_path_beneath_attr,
@@ -125,7 +126,7 @@ private:
  *
  * This rule controls to which ports the process may bind to.
  */
-class NetPortRule :
+class LLPP_EXPORT NetPortRule :
 	public Rule<
 		NetPortRule,
 #if LLPP_BUILD_LANDLOCK_API >= 4

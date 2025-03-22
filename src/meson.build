@@ -16,6 +16,10 @@ liblandlockpp = library(
 	],
         install: true,
 	version: meson.project_version(),
+	cpp_args: [
+		'-D_LLPP_EXPORTS',
+	],
+	gnu_symbol_visibility: 'hidden',
 )
 
 pkg_config = import('pkgconfig')
