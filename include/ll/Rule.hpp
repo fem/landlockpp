@@ -1,14 +1,16 @@
 #pragma once
 
 #include <filesystem>
-#include <linux/landlock.h>
-#include <type_traits>
 #include <vector>
 
 #include <ll/ActionType.hpp>
 #include <ll/config.h>
 #include <ll/coredefs.hpp>
 #include <ll/typing.hpp>
+
+extern "C" {
+#include <linux/landlock.h>
+}
 
 namespace landlock
 {
