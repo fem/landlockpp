@@ -61,7 +61,7 @@ test_header = configure_file(
 )
 
 tests = files([
-	'ActionTypeTest.cpp',
+	'CodedTypeTest.cpp',
 	'RuleTest.cpp',
 	'RulesetTest.cpp',
 	'typingTest.cpp',

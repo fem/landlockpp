@@ -29,8 +29,7 @@ class Ruleset
 {
 public:
 	template <ActionRuleType supp>
-	using ActionVec = std::vector<
-		ActionType<typing::ValWrapper<ActionRuleType, supp>>>;
+	using ActionVec = std::vector<ActionType<supp>>;
 	using RuleVariant = std::variant<PathBeneathRule, NetPortRule>;
 
 	/**
