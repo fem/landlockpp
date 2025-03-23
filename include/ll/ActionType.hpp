@@ -182,6 +182,53 @@ using AllAction = ActionType<typing::ValWrapper<
 	ActionRuleType::PATH_BENEATH,
 	ActionRuleType::NET_PORT>>;
 
+// NOLINTBEGIN(*-macro-usage)
+#define DECL_ACTION(type, cls, name, abi)                                      \
+	constexpr static type cls##_##name                                     \
+	{                                                                      \
+		(LANDLOCK_ACCESS_##cls##_##name), abi                          \
+	}
+
+#define DECL_INVALID_ACTION(type, cls, name)                                   \
+	constexpr static type cls##_##name = INVALID_ACTION_##cls
+
+#if LLPP_BUILD_LANDLOCK_API >= 1
+# define DECL_ACTION_ABI1(type, cls, name) DECL_ACTION(type, cls, name, 1)
+#else
+# define DECL_ACTION_ABI1(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 2
+# define DECL_ACTION_ABI2(type, cls, name) DECL_ACTION(type, cls, name, 2)
+#else
+# define DECL_ACTION_ABI2(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 3
+# define DECL_ACTION_ABI3(type, cls, name) DECL_ACTION(type, cls, name, 3)
+#else
+# define DECL_ACTION_ABI3(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 4
+# define DECL_ACTION_ABI4(type, cls, name) DECL_ACTION(type, cls, name, 4)
+#else
+# define DECL_ACTION_ABI4(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 5
+# define DECL_ACTION_ABI5(type, cls, name) DECL_ACTION(type, cls, name, 5)
+#else
+# define DECL_ACTION_ABI5(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+
+#if LLPP_BUILD_LANDLOCK_API >= 6
+# define DECL_ACTION_ABI6(type, cls, name) DECL_ACTION(type, cls, name, 6)
+#else
+# define DECL_ACTION_ABI6(type, cls, name) DECL_INVALID_ACTION(type, cls, name)
+#endif
+// NOLINTEND(*-macro-usage)
+
 /**
  * Dummy invalid action
  *
@@ -207,63 +254,36 @@ constexpr static NetAction INVALID_ACTION_NET{
 	INVALID_ACTION.type_code(), INVALID_ACTION.min_abi()
 };
 
-#if LLPP_BUILD_LANDLOCK_API >= 1
-constexpr static FsAction FS_EXECUTE{LANDLOCK_ACCESS_FS_EXECUTE, 1};
-constexpr static FsAction FS_WRITE_FILE{LANDLOCK_ACCESS_FS_WRITE_FILE, 1};
-constexpr static FsAction FS_READ_FILE{LANDLOCK_ACCESS_FS_READ_FILE, 1};
-constexpr static FsAction FS_READ_DIR{LANDLOCK_ACCESS_FS_READ_DIR, 1};
+DECL_ACTION_ABI1(FsAction, FS, EXECUTE);
+DECL_ACTION_ABI1(FsAction, FS, WRITE_FILE);
+DECL_ACTION_ABI1(FsAction, FS, READ_FILE);
+DECL_ACTION_ABI1(FsAction, FS, READ_DIR);
+DECL_ACTION_ABI1(FsAction, FS, REMOVE_DIR);
+DECL_ACTION_ABI1(FsAction, FS, REMOVE_FILE);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_CHAR);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_DIR);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_REG);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_SOCK);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_FIFO);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_BLOCK);
+DECL_ACTION_ABI1(FsAction, FS, MAKE_SYM);
 
-constexpr static FsAction FS_REMOVE_DIR{LANDLOCK_ACCESS_FS_REMOVE_DIR, 1};
-constexpr static FsAction FS_REMOVE_FILE{LANDLOCK_ACCESS_FS_REMOVE_FILE, 1};
-constexpr static FsAction FS_MAKE_CHAR{LANDLOCK_ACCESS_FS_MAKE_CHAR, 1};
-constexpr static FsAction FS_MAKE_DIR{LANDLOCK_ACCESS_FS_MAKE_DIR, 1};
-constexpr static FsAction FS_MAKE_REG{LANDLOCK_ACCESS_FS_MAKE_REG, 1};
-constexpr static FsAction FS_MAKE_SOCK{LANDLOCK_ACCESS_FS_MAKE_SOCK, 1};
-constexpr static FsAction FS_MAKE_FIFO{LANDLOCK_ACCESS_FS_MAKE_FIFO, 1};
-constexpr static FsAction FS_MAKE_BLOCK{LANDLOCK_ACCESS_FS_MAKE_BLOCK, 1};
-constexpr static FsAction FS_MAKE_SYM{LANDLOCK_ACCESS_FS_MAKE_SYM, 1};
-#else
-constexpr static FsAction FS_EXECUTE = INVALID_ACTION_FS;
-constexpr static FsAction FS_WRITE_FILE = INVALID_ACTION_FS;
-constexpr static FsAction FS_READ_FILE = INVALID_ACTION_FS;
-constexpr static FsAction FS_READ_DIR = INVALID_ACTION_FS;
+DECL_ACTION_ABI2(FsAction, FS, REFER);
 
-constexpr static FsAction FS_REMOVE_DIR = INVALID_ACTION_FS;
-constexpr static FsAction FS_REMOVE_FILE = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_CHAR = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_DIR = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_REG = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_SOCK = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_FIFO = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_BLOCK = INVALID_ACTION_FS;
-constexpr static FsAction FS_MAKE_SYM = INVALID_ACTION_FS;
-#endif
+DECL_ACTION_ABI3(FsAction, FS, TRUNCATE);
 
-#if LLPP_BUILD_LANDLOCK_API >= 2
-constexpr static FsAction FS_REFER{LANDLOCK_ACCESS_FS_REFER, 2};
-#else
-constexpr static FsAction FS_REFER = INVALID_ACTION_FS;
-#endif
+DECL_ACTION_ABI4(NetAction, NET, BIND_TCP);
+DECL_ACTION_ABI4(NetAction, NET, CONNECT_TCP);
 
-#if LLPP_BUILD_LANDLOCK_API >= 3
-constexpr static FsAction FS_TRUNCATE{LANDLOCK_ACCESS_FS_TRUNCATE, 3};
-#else
-constexpr static FsAction FS_TRUNCATE = INVALID_ACTION_FS;
-#endif
+DECL_ACTION_ABI5(FsAction, FS, IOCTL_DEV);
 
-#if LLPP_BUILD_LANDLOCK_API >= 4
-constexpr static NetAction NET_BIND_TCP{LANDLOCK_ACCESS_NET_BIND_TCP, 4};
-constexpr static NetAction NET_CONNECT_TCP{LANDLOCK_ACCESS_NET_CONNECT_TCP, 4};
-#else
-constexpr static NetAction NET_BIND_TCP = INVALID_ACTION_NET;
-constexpr static NetAction NET_CONNECT_TCP = INVALID_ACTION_NET;
-#endif
-
-#if LLPP_BUILD_LANDLOCK_API >= 5
-constexpr static FsAction FS_IOCTL_DEV{LANDLOCK_ACCESS_FS_IOCTL_DEV, 5};
-#else
-constexpr static FsAction FS_IOCTL_DEV = INVALID_ACTION_FS;
-#endif
+#undef DECL_ACTION
+#undef DECL_ACTION_ABI1
+#undef DECL_ACTION_ABI2
+#undef DECL_ACTION_ABI3
+#undef DECL_ACTION_ABI4
+#undef DECL_ACTION_ABI5
+#undef DECL_ACTION_ABI6
 } // namespace action
 
 /**
