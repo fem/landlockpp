@@ -46,9 +46,8 @@ Ruleset::~Ruleset()
 void Ruleset::enforce(bool set_no_new_privs) const
 {
 	if (set_no_new_privs) {
-		const int res =
-			::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0
-			); // NOLINT(*-vararg)
+		// NOLINTNEXTLINE(*-vararg)
+		const int res = ::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 		assert_res(res);
 	}
 
