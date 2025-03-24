@@ -34,8 +34,7 @@ public:
 	/// Resulting attribute type for the landlock API
 	using Attr = AttrT;
 	using AttrVec = std::vector<Attr>;
-	using ReducedActionType =
-		ActionType<typing::ValWrapper<ActionRuleType, supported>>;
+	using ReducedActionType = ActionType<supported>;
 	using Base = Rule<Self, AttrT, supported, min_abi>;
 
 	constexpr static int MIN_ABI = min_abi;
@@ -61,8 +60,7 @@ public:
 	 * Add an action to this rule
 	 */
 	template <typename RuleT, RuleT... action_supp>
-	Self&
-	add_action(ActionType<typing::ValWrapper<RuleT, action_supp...>> type)
+	Self& add_action(ActionType<action_supp...> type)
 	{
 		static_assert(
 			typing::is_element<

@@ -22,7 +22,7 @@ PathBeneathRule::AttrVec PathBeneathRule::generate(int max_abi) const noexcept
 		return {};
 	}
 
-	const ActionType type = fold_actions(max_abi);
+	const ReducedActionType type = fold_actions(max_abi);
 
 	if (type.type_code() == 0) {
 		return {};

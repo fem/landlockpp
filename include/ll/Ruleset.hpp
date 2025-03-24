@@ -13,6 +13,7 @@ extern "C" {
 #include <ll/ActionType.hpp>
 #include <ll/Rule.hpp>
 #include <ll/RuleType.hpp>
+#include <ll/Scope.hpp>
 #include <ll/config.h>
 #include <ll/typing.hpp>
 
@@ -29,8 +30,8 @@ class Ruleset
 {
 public:
 	template <ActionRuleType supp>
-	using ActionVec = std::vector<
-		ActionType<typing::ValWrapper<ActionRuleType, supp>>>;
+	using ActionVec = std::vector<ActionType<supp>>;
+	using ScopeVec = std::vector<Scope>;
 	using RuleVariant = std::variant<PathBeneathRule, NetPortRule>;
 
 	/**
@@ -48,7 +49,8 @@ public:
 		const ActionVec<ActionRuleType::PATH_BENEATH>&
 			handled_access_fs = {},
 		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net =
-			{}
+			{},
+		const ScopeVec& scoped = {}
 	);
 	Ruleset(const Ruleset&) = delete;
 	Ruleset& operator=(const Ruleset&) = delete;
@@ -136,7 +138,8 @@ private:
 	void init_ruleset(
 		const ActionVec<ActionRuleType::PATH_BENEATH>&
 			handled_access_fs,
-		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net
+		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net,
+		const ScopeVec& scoped
 	);
 
 	template <typename AttrT>

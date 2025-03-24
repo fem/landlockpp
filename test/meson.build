@@ -1,8 +1,11 @@
-test_deps = []
+threads_dep = dependency('threads', required: true)
+
+test_deps = [threads_dep]
 test_conf_data = {}
 add_test_main = false
 
 catch_dep = dependency('catch2-with-main', required: false)
+
 if catch_dep.found()
 	test_deps += catch_dep
 else
@@ -61,7 +64,7 @@ test_header = configure_file(
 )
 
 tests = files([
-	'ActionTypeTest.cpp',
+	'CodedTypeTest.cpp',
 	'RuleTest.cpp',
 	'RulesetTest.cpp',
 	'typingTest.cpp',
