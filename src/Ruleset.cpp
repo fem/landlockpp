@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <system_error>
 #include <unistd.h>
-#include <vector>
 
 extern "C" {
 #include <linux/landlock.h>
@@ -20,12 +19,15 @@ namespace landlock
 Ruleset::Ruleset(
 	// NOLINTNEXTLINE(*-easily-swappable-parameters)
 	const ActionVec<ActionRuleType::PATH_BENEATH>& handled_access_fs,
-	const ActionVec<ActionRuleType::NET_PORT>& handled_access_net
+	const ActionVec<ActionRuleType::NET_PORT>& handled_access_net,
+	const ScopeVec& scoped
 )
 {
-	if (handled_access_fs.empty() && handled_access_net.empty()) {
+	if (handled_access_fs.empty() && handled_access_net.empty() &&
+	    scoped.empty()) {
 		throw std::invalid_argument{
-			"Landlock without handled access is not allowed"
+			"Landlock without handled access and scope restriction "
+			"is not allowed"
 		};
 	}
 
@@ -33,7 +35,7 @@ Ruleset::Ruleset(
 		return;
 	}
 
-	init_ruleset(handled_access_fs, handled_access_net);
+	init_ruleset(handled_access_fs, handled_access_net, scoped);
 }
 
 Ruleset::~Ruleset()
@@ -75,7 +77,8 @@ void Ruleset::init_ruleset(
 	// NOLINTNEXTLINE(*-easily-swappable-parameters)
 	const ActionVec<ActionRuleType::PATH_BENEATH>& handled_access_fs,
 	[[maybe_unused]] const ActionVec<ActionRuleType::NET_PORT>&
-		handled_access_net
+		handled_access_net,
+	[[maybe_unused]] const ScopeVec& scoped
 )
 {
 	landlock_ruleset_attr attr{};
@@ -86,6 +89,9 @@ void Ruleset::init_ruleset(
 #if LLPP_BUILD_LANDLOCK_API >= 4
 	attr.handled_access_net =
 		join(abi_version_, handled_access_net).type_code();
+#endif
+#if LLPP_BUILD_LANDLOCK_API >= 6
+	attr.scoped = join(abi_version_, scoped).type_code();
 #endif
 
 	const int res = landlock_create_ruleset(&attr, sizeof(attr), 0);
