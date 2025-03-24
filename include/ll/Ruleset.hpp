@@ -15,6 +15,7 @@ extern "C" {
 #include <ll/RuleType.hpp>
 #include <ll/Scope.hpp>
 #include <ll/config.h>
+#include <ll/coredefs.hpp>
 #include <ll/typing.hpp>
 
 namespace landlock
@@ -26,7 +27,7 @@ namespace landlock
  * This ruleset stores a base configuration defining which types of actions
  * are protected using this ruleset as well as rules that should apply.
  */
-class Ruleset
+class LLPP_EXPORT Ruleset
 {
 public:
 	template <ActionRuleType supp>
@@ -45,7 +46,7 @@ public:
 	 *
 	 * @throws std::system_error If the syscall fails
 	 */
-	explicit Ruleset(
+	LLPP_EXPORT explicit Ruleset(
 		const ActionVec<ActionRuleType::PATH_BENEATH>&
 			handled_access_fs = {},
 		const ActionVec<ActionRuleType::NET_PORT>& handled_access_net =
@@ -56,7 +57,7 @@ public:
 	Ruleset& operator=(const Ruleset&) = delete;
 	Ruleset(Ruleset&&) = delete;
 	Ruleset& operator=(Ruleset&&) = delete;
-	~Ruleset();
+	LLPP_EXPORT ~Ruleset();
 
 	/**
 	 * Return whether Landlock support is enabled on the system
@@ -122,7 +123,7 @@ public:
 	 *
 	 * @param set_no_new_privs Run prctl(1) to set NO_NEW_PRIVS
 	 */
-	void enforce(bool set_no_new_privs = true) const;
+	LLPP_EXPORT void enforce(bool set_no_new_privs = true) const;
 
 private:
 	/**
