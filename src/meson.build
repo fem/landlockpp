@@ -14,8 +14,8 @@ liblandlockpp = library(
 		src_include,
 		public_include,
 	],
-        install: true,
-	version: meson.project_version(),
+	install: true,
+	version: '0.2.0',
 	cpp_args: [
 		'-D_LLPP_EXPORTS',
 	],
